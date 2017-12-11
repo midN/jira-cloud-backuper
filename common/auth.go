@@ -12,8 +12,7 @@ import (
 	cli "gopkg.in/urfave/cli.v1"
 )
 
-// Auth struct is used as JSON sent to JIRA for authentication
-type Auth struct {
+type auth struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
@@ -28,7 +27,7 @@ func AuthUser(c *cli.Context) (http.Client, string, error) {
 		return client, host, err
 	}
 
-	auth, _ := json.Marshal(Auth{
+	auth, _ := json.Marshal(auth{
 		Username: user,
 		Password: pw,
 	})
