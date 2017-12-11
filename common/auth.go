@@ -19,12 +19,18 @@ type Auth struct {
 }
 
 // AuthUser authenticates user with provided username/pw in JIRA using basicauth
-func AuthUser(username string, password string, host string) (http.Client, error) {
+func AuthUser(c *cli.Context) (http.Client, string, error) {
 	jar, _ := cookiejar.New(nil)
 	client := http.Client{Jar: jar}
+
+	user, pw, host, err := defineCredentials(c)
+	if err != nil {
+		return client, host, err
+	}
+
 	auth, _ := json.Marshal(Auth{
-		Username: username,
-		Password: password,
+		Username: user,
+		Password: pw,
 	})
 
 	resp, _ := client.Post(
@@ -36,15 +42,12 @@ func AuthUser(username string, password string, host string) (http.Client, error
 	resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return client, errors.New(string(b))
-	} else {
-		return client, nil
+		return client, host, errors.New(string(b))
 	}
+	return client, host, nil
 }
 
-// DefineCredentials build host based on domain, validates if given url exists
-// and return username/pw/host
-func DefineCredentials(c *cli.Context) (string, string, string, error) {
+func defineCredentials(c *cli.Context) (string, string, string, error) {
 	host := fmt.Sprintf("https://%s.atlassian.net", c.GlobalString("domain"))
 	_, err := http.Get(host)
 	if err != nil {

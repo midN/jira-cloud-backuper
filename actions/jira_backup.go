@@ -28,29 +28,24 @@ type progressResponse struct {
 	Message  string `json:"message"`
 }
 
-// JiraAction returns cli.Context related function
+// JiraBackup returns cli.Context related function
 // which calls necessary JIRA APIs to initalize a backup action
-func JiraAction() func(c *cli.Context) error {
+func JiraBackup() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
-		user, pw, host, err := common.DefineCredentials(c)
+		client, host, err := common.AuthUser(c)
 		if err != nil {
-			return cliError(err)
-		}
-
-		client, err := common.AuthUser(user, pw, host)
-		if err != nil {
-			return cliError(err)
+			return common.CliError(err)
 		}
 
 		backupID, err := initiateBackup(client, host)
 		if err != nil {
-			return cliError(err)
+			return common.CliError(err)
 		}
 
 		// TODO: Check backup progress until it's ready
 		downloadPath, err := checkProgress(client, backupID, host)
 		if err != nil {
-			return cliError(err)
+			return common.CliError(err)
 		}
 
 		fmt.Println(downloadURL(downloadPath, host))
@@ -101,11 +96,4 @@ func downloadURL(path string, host string) string {
 		url))
 
 	return userMessage
-}
-
-func cliError(err error) *cli.ExitError {
-	redError := color.RedString(
-		fmt.Sprintln("Request failed:", err),
-	)
-	return cli.NewExitError(redError, 1)
 }
