@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/midN/jira-cloud-backuper/actions"
+	"github.com/midN/jira-cloud-backuper/flags"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -17,6 +18,7 @@ var (
 		Name:   "jira",
 		Usage:  "Download latest JIRA Cloud backup",
 		Action: actions.JiraDownload(),
+		Flags:  flags.DlFlags(),
 	}
 
 	// Commands
@@ -39,6 +41,7 @@ var (
 	}
 )
 
+// Commands returns list of cli.Commands
 func Commands() []cli.Command {
 	return []cli.Command{
 		backupCommand,

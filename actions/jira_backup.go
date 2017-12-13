@@ -22,12 +22,6 @@ type backupResponse struct {
 	TaskID string `json:"taskId"`
 }
 
-type progressResponse struct {
-	Result   string `json:"result"`
-	Progress string `json:"progress"`
-	Message  string `json:"message"`
-}
-
 // JiraBackup returns cli.Context related function
 // which calls necessary JIRA APIs to initalize a backup action
 func JiraBackup() func(c *cli.Context) error {
@@ -43,12 +37,14 @@ func JiraBackup() func(c *cli.Context) error {
 		}
 
 		// TODO: Check backup progress until it's ready
-		downloadPath, err := checkProgress(client, backupID, host)
+		downloadURL, err := common.JiraCheckBackupProgress(client, backupID, host)
 		if err != nil {
 			return common.CliError(err)
 		}
 
-		fmt.Println(downloadURL(downloadPath, host))
+		fmt.Println(color.GreenString(fmt.Sprintln(
+			"Done, please use same app to download file or direct link:",
+			downloadURL)))
 		return nil
 	}
 }
@@ -73,27 +69,4 @@ func initiateBackup(client http.Client, host string) (string, error) {
 		return "", errors.New(string(body))
 	}
 	return respJSON.TaskID, nil
-}
-
-func checkProgress(client http.Client, id string, host string) (string, error) {
-	var respJSON = new(progressResponse)
-	url := host + "/rest/backup/1/export/getProgress?taskId=" + id
-	resp, _ := client.Get(url)
-	body, _ := ioutil.ReadAll(resp.Body)
-	json.Unmarshal(body, &respJSON)
-	resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return "", errors.New(string(body))
-	}
-	return respJSON.Result, nil
-}
-
-func downloadURL(path string, host string) string {
-	url := host + "/servlet/" + path
-	userMessage := color.GreenString(fmt.Sprintln(
-		"Done, please same app to download file or direct link:",
-		url))
-
-	return userMessage
 }
