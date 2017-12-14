@@ -36,8 +36,7 @@ func JiraBackup() func(c *cli.Context) error {
 			return common.CliError(err)
 		}
 
-		// TODO: Check backup progress until it's ready
-		downloadURL, err := common.JiraCheckBackupProgress(client, backupID, host)
+		downloadURL, err := common.JiraWaitForBackupReadyness(client, backupID, host)
 		if err != nil {
 			return common.CliError(err)
 		}

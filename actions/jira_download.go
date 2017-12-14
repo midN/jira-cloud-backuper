@@ -46,7 +46,7 @@ func (pt *PassThru) Read(p []byte) (int, error) {
 // which calls necessary JIRA APIs to download latest backup file
 func JiraDownload() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
-		filename := c.String("output")
+		filename := c.GlobalString("output")
 		out, err := os.Create(filename)
 		if err != nil {
 			return common.CliError(err)
@@ -63,8 +63,7 @@ func JiraDownload() func(c *cli.Context) error {
 			return common.CliError(err)
 		}
 
-		// TODO: Check backup progress until it's ready
-		downloadURL, err := common.JiraCheckBackupProgress(client, latestID, host)
+		downloadURL, err := common.JiraWaitForBackupReadyness(client, latestID, host)
 		if err != nil {
 			return common.CliError(err)
 		}
@@ -106,5 +105,5 @@ func downloadLatest(client http.Client, url string, out *os.File) (string, error
 	}
 
 	return color.GreenString(fmt.Sprintln(
-		"Download finished, file size:", count, "bytes.")), nil
+		"Download finished, file size:", count, "bytes.", "File:", out.Name())), nil
 }

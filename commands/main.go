@@ -18,7 +18,6 @@ var (
 		Name:   "jira",
 		Usage:  "Download latest JIRA Cloud backup",
 		Action: actions.JiraDownload(),
-		Flags:  flags.DlFlags(),
 	}
 
 	// Commands
@@ -35,6 +34,7 @@ var (
 		Name:    "download",
 		Aliases: []string{"dl"},
 		Usage:   "download ( jira or confluence )",
+		Flags:   flags.DlFlags(),
 		Subcommands: []cli.Command{
 			jiraDownloadCommand,
 		},
