@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type progressResponse struct {
+type jiraProgressResponse struct {
 	Result   string `json:"result"`
 	Progress int    `json:"progress"`
 	Message  string `json:"message"`
@@ -39,7 +39,7 @@ func JiraWaitForBackupReadyness(client http.Client, id string, host string) (str
 }
 
 func jiraCheckBackupProgress(client http.Client, id string, host string) (string, int, error) {
-	var respJSON = new(progressResponse)
+	var respJSON = new(jiraProgressResponse)
 	url := host + "/rest/backup/1/export/getProgress?taskId=" + id
 	resp, _ := client.Get(url)
 	body, _ := ioutil.ReadAll(resp.Body)

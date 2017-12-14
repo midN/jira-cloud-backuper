@@ -13,25 +13,25 @@ import (
 	"gopkg.in/urfave/cli.v1"
 )
 
-type backupResponse struct {
-	TaskID string `json:"taskId"`
-}
-
-// JiraBackup returns cli.Context related function
+// ConfluenceBackup returns cli.Context related function
 // which calls necessary JIRA APIs to initalize a backup action
-func JiraBackup() func(c *cli.Context) error {
+func ConfluenceBackup() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
 		client, host, err := common.AuthUser(c)
 		if err != nil {
 			return common.CliError(err)
 		}
 
-		backupID, err := initiateJiraBackup(client, host)
+		err = initiateConfluenceBackup(client, host)
 		if err != nil {
 			return common.CliError(err)
 		}
+		fmt.Print("Ok good")
 
-		downloadURL, err := common.JiraWaitForBackupReadyness(client, backupID, host)
+		// Cannot check percentage here since Confluence backup API
+		// returns fake percentage which goes over 100 lol.
+		// Can it reach 9000+?, that is the question.
+		downloadURL, err := common.ConfluenceWaitForBackupReadyness(client, host)
 		if err != nil {
 			return common.CliError(err)
 		}
@@ -43,24 +43,22 @@ func JiraBackup() func(c *cli.Context) error {
 	}
 }
 
-func initiateJiraBackup(client http.Client, host string) (string, error) {
-	var respJSON = new(backupResponse)
+func initiateConfluenceBackup(client http.Client, host string) error {
 	jsonBody, _ := json.Marshal(common.BackupBody{
 		"true",
 		"true",
 	})
 
 	resp, _ := client.Post(
-		host+"/rest/backup/1/export/runbackup",
+		host+"/wiki/rest/obm/1.0/runbackup",
 		"application/json",
 		bytes.NewBuffer(jsonBody),
 	)
 	body, _ := ioutil.ReadAll(resp.Body)
-	json.Unmarshal(body, &respJSON)
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return "", errors.New(string(body))
+		return errors.New(string(body))
 	}
-	return respJSON.TaskID, nil
+	return nil
 }

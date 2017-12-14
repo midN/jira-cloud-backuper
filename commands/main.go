@@ -14,6 +14,13 @@ var (
 		Action: actions.JiraBackup(),
 	}
 
+	conflueceBackupCommand = cli.Command{
+		Name:    "confluence",
+		Aliases: []string{"cf"},
+		Usage:   "Backup Confluence Cloud",
+		Action:  actions.ConfluenceBackup(),
+	}
+
 	jiraDownloadCommand = cli.Command{
 		Name:   "jira",
 		Usage:  "Download latest JIRA Cloud backup",
@@ -27,6 +34,7 @@ var (
 		Usage:   "backup ( jira or confluence )",
 		Subcommands: []cli.Command{
 			jiraBackupCommand,
+			conflueceBackupCommand,
 		},
 	}
 
