@@ -26,7 +26,7 @@ func ConfluenceBackup() func(c *cli.Context) error {
 		if err != nil {
 			return common.CliError(err)
 		}
-		fmt.Print("Ok good")
+		fmt.Println("Backup initiated")
 
 		// Cannot check percentage here since Confluence backup API
 		// returns fake percentage which goes over 100 lol.

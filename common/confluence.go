@@ -18,16 +18,16 @@ type confluenceProgressResponse struct {
 // ConfluenceWaitForBackupReadyness check status of a backup
 // and loops until it's ready
 func ConfluenceWaitForBackupReadyness(client http.Client, host string) (string, error) {
-	downloadURL, status, progress := "", "", ""
+	downloadURL, fileName, status, progress := "", "", "", ""
 	var err error
 
-	for downloadURL == "" {
-		downloadURL, status, progress, err = confluenceCheckBackupProgress(client, host)
+	for fileName == "" {
+		downloadURL, fileName, status, progress, err = confluenceCheckBackupProgress(client, host)
 		if err != nil {
 			return "", err
 		}
 
-		if downloadURL == "" {
+		if fileName == "" {
 			fmt.Println("Backup is still in progress, status:",
 				status,
 				"Progreass:",
@@ -40,7 +40,7 @@ func ConfluenceWaitForBackupReadyness(client http.Client, host string) (string, 
 	return downloadURL, nil
 }
 
-func confluenceCheckBackupProgress(client http.Client, host string) (string, string, string, error) {
+func confluenceCheckBackupProgress(client http.Client, host string) (string, string, string, string, error) {
 	var respJSON = new(confluenceProgressResponse)
 	url := host + "/wiki/rest/obm/1.0/getprogress"
 	resp, _ := client.Get(url)
@@ -49,9 +49,9 @@ func confluenceCheckBackupProgress(client http.Client, host string) (string, str
 	resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return "", "", "", errors.New(string(body))
+		return "", "", "", "", errors.New(string(body))
 	}
-	return confluenceDownloadURL(respJSON.Result, host), respJSON.Message, respJSON.Progress, nil
+	return confluenceDownloadURL(respJSON.Result, host), respJSON.Result, respJSON.Message, respJSON.Progress, nil
 }
 
 func confluenceDownloadURL(path string, host string) string {
