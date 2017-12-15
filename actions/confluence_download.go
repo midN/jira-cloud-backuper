@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 
@@ -13,13 +12,13 @@ import (
 	"gopkg.in/urfave/cli.v1"
 )
 
-// JiraDownload returns cli.Context related function
+// ConfluenceDownload returns cli.Context related function
 // which calls necessary JIRA APIs to download latest backup file
-func JiraDownload() func(c *cli.Context) error {
+func ConfluenceDownload() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
 		filename := c.GlobalString("output")
 		if filename == "" {
-			filename = "jira.zip"
+			filename = "confluence.zip"
 		}
 		out, err := os.Create(filename)
 		if err != nil {
@@ -32,18 +31,13 @@ func JiraDownload() func(c *cli.Context) error {
 			return common.CliError(err)
 		}
 
-		latestID, err := latestJiraTaskID(client, host)
-		if err != nil {
-			return common.CliError(err)
-		}
-
-		downloadURL, err := common.JiraWaitForBackupReadyness(client, latestID, host)
+		downloadURL, err := common.ConfluenceWaitForBackupReadyness(client, host)
 		if err != nil {
 			return common.CliError(err)
 		}
 
 		fmt.Println("Downloading to", filename)
-		result, err := downloadLatestJira(client, downloadURL, out)
+		result, err := downloadLatestConfluence(client, downloadURL, out)
 		if err != nil {
 			return common.CliError(err)
 		}
@@ -53,19 +47,7 @@ func JiraDownload() func(c *cli.Context) error {
 	}
 }
 
-func latestJiraTaskID(client http.Client, host string) (string, error) {
-	url := host + "/rest/backup/1/export/lastTaskId"
-	resp, _ := client.Get(url)
-	body, _ := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return "", errors.New(string(body))
-	}
-	return string(body), nil
-}
-
-func downloadLatestJira(client http.Client, url string, out *os.File) (string, error) {
+func downloadLatestConfluence(client http.Client, url string, out *os.File) (string, error) {
 	resp, _ := client.Get(url)
 	if resp.StatusCode == 404 {
 		return "", errors.New("File not found at " + url)

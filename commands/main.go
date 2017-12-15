@@ -27,6 +27,13 @@ var (
 		Action: actions.JiraDownload(),
 	}
 
+	confluenceDownloadCommand = cli.Command{
+		Name:    "confluence",
+		Aliases: []string{"cf"},
+		Usage:   "Download latest Confluence Cloud backup",
+		Action:  actions.ConfluenceDownload(),
+	}
+
 	// Commands
 	backupCommand = cli.Command{
 		Name:    "backup",
@@ -45,6 +52,7 @@ var (
 		Flags:   flags.DlFlags(),
 		Subcommands: []cli.Command{
 			jiraDownloadCommand,
+			confluenceDownloadCommand,
 		},
 	}
 )
