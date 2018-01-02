@@ -13,6 +13,7 @@ type jiraProgressResponse struct {
 	Result   string `json:"result"`
 	Progress int    `json:"progress"`
 	Message  string `json:"message"`
+	Status   string `json:"Status"`
 }
 
 // JiraWaitForBackupReadyness check status of a backup
@@ -49,6 +50,11 @@ func jiraCheckBackupProgress(client http.Client, id string, host string) (string
 	if resp.StatusCode != 200 {
 		return "", 0, errors.New(string(body))
 	}
+
+	if respJSON.Status == "Failed" {
+		return "", 0, errors.New(respJSON.Result)
+	}
+
 	return jiraDownloadURL(respJSON.Result, host), respJSON.Progress, nil
 }
 
