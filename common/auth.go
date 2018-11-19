@@ -1,23 +1,16 @@
 package common
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 
-	cli "gopkg.in/urfave/cli.v1"
+	"gopkg.in/urfave/cli.v1"
 )
 
-type auth struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-// AuthUser authenticates user with provided username/pw in JIRA using basicauth
+// AuthUser authenticates user with provided username/token against Atlassian REST API using basicauth.
 func AuthUser(c *cli.Context) (http.Client, string, error) {
 	jar, _ := cookiejar.New(nil)
 	client := http.Client{Jar: jar}
@@ -27,23 +20,34 @@ func AuthUser(c *cli.Context) (http.Client, string, error) {
 		return client, host, err
 	}
 
-	auth, _ := json.Marshal(auth{
-		Username: user,
-		Password: pw,
-	})
+	// Create a new request and add headers.
+	req, err := http.NewRequest("POST", host, nil)
+	req.Header.Add("X-Atlassian-Token", "no-check")
+	req.Header.Add("X-Requested-With", "XMLHttpRequest")
 
-	resp, _ := client.Post(
-		host+"/rest/auth/1/session",
-		"application/json",
-		bytes.NewBuffer(auth),
-	)
+	// Set basic authentication with username and token.
+	req.SetBasicAuth(user, pw)
+
+	// Set request.
+	resp, err := client.Do(req)
+
 	b, _ := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
+	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		return client, host, errors.New(string(b))
+	// Check for valid status to return correct error code.
+	var respError error
+	switch c := resp.StatusCode; c {
+	case 200:
+		respError = nil
+	case 302:
+		// This case sometimes happens when you try to authenticate against a cloud instance running a single product
+		// i.e. Confluence or JIRA (but not both).
+		respError = nil
+	default:
+		respError = errors.New(string(b))
 	}
-	return client, host, nil
+
+	return client, host, respError
 }
 
 func defineCredentials(c *cli.Context) (string, string, string, error) {
