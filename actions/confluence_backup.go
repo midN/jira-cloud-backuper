@@ -14,7 +14,7 @@ import (
 )
 
 // ConfluenceBackup returns cli.Context related function
-// which calls necessary JIRA APIs to initalize a backup action
+// which calls necessary JIRA APIs to initialize a backup action
 func ConfluenceBackup() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
 		client, host, err := common.AuthUser(c)
@@ -31,7 +31,7 @@ func ConfluenceBackup() func(c *cli.Context) error {
 		// Cannot check percentage here since Confluence backup API
 		// returns fake percentage which goes over 100 lol.
 		// Can it reach 9000+?, that is the question.
-		downloadURL, err := common.ConfluenceWaitForBackupReadyness(client, host)
+		downloadURL, err := common.ConfluenceWaitForBackupReadiness(client, host)
 		if err != nil {
 			return common.CliError(err)
 		}

@@ -15,9 +15,9 @@ type confluenceProgressResponse struct {
 	Message  string `json:"currentStatus"`
 }
 
-// ConfluenceWaitForBackupReadyness check status of a backup
+// ConfluenceWaitForBackupReadiness check status of a backup
 // and loops until it's ready
-func ConfluenceWaitForBackupReadyness(client http.Client, host string) (string, error) {
+func ConfluenceWaitForBackupReadiness(client http.Client, host string) (string, error) {
 	downloadURL, fileName, status, progress := "", "", "", ""
 	var err error
 
@@ -30,7 +30,7 @@ func ConfluenceWaitForBackupReadyness(client http.Client, host string) (string, 
 		if fileName == "" {
 			fmt.Println("Backup is still in progress, status:",
 				status,
-				"Progreass:",
+				"Progress:",
 				progress,
 				"Retrying in 10s")
 			time.Sleep(10 * time.Second)

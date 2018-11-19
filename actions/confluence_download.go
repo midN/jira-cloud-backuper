@@ -31,7 +31,7 @@ func ConfluenceDownload() func(c *cli.Context) error {
 			return common.CliError(err)
 		}
 
-		downloadURL, err := common.ConfluenceWaitForBackupReadyness(client, host)
+		downloadURL, err := common.ConfluenceWaitForBackupReadiness(client, host)
 		if err != nil {
 			return common.CliError(err)
 		}
