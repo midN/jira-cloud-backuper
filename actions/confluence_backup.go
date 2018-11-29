@@ -3,10 +3,7 @@ package actions
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 
 	"github.com/fatih/color"
 	"github.com/midN/jira-cloud-backuper/common"
@@ -17,12 +14,7 @@ import (
 // which calls necessary JIRA APIs to initialize a backup action
 func ConfluenceBackup() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
-		client, host, err := common.AuthUser(c)
-		if err != nil {
-			return common.CliError(err)
-		}
-
-		err = initiateConfluenceBackup(client, host)
+		err := initiateConfluenceBackup(c)
 		if err != nil {
 			return common.CliError(err)
 		}
@@ -31,7 +23,7 @@ func ConfluenceBackup() func(c *cli.Context) error {
 		// Cannot check percentage here since Confluence backup API
 		// returns fake percentage which goes over 100 lol.
 		// Can it reach 9000+?, that is the question.
-		downloadURL, err := common.ConfluenceWaitForBackupReadiness(client, host)
+		downloadURL, err := common.ConfluenceWaitForBackupReadiness(c)
 		if err != nil {
 			return common.CliError(err)
 		}
@@ -43,22 +35,17 @@ func ConfluenceBackup() func(c *cli.Context) error {
 	}
 }
 
-func initiateConfluenceBackup(client http.Client, host string) error {
+func initiateConfluenceBackup(c *cli.Context) error {
+	headers := map[string]string{"Content-Type": "application/json"}
 	jsonBody, _ := json.Marshal(common.BackupBody{
-		"true",
-		"true",
+		CbAttachments: "true",
+		ExportToCloud: "true",
 	})
 
-	resp, _ := client.Post(
-		host+"/wiki/rest/obm/1.0/runbackup",
-		"application/json",
-		bytes.NewBuffer(jsonBody),
-	)
-	body, _ := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return errors.New(string(body))
+	body, err := common.DoRequest(c, "POST", "/wiki/rest/obm/1.0/runbackup", headers, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return common.CliError(err)
 	}
+
 	return nil
 }

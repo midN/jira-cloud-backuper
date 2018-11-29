@@ -7,8 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/midN/jira-cloud-backuper/common"
-
 	cli "gopkg.in/urfave/cli.v1"
 )
 
@@ -47,9 +45,9 @@ func (pt *PassThru) Read(p []byte) (int, error) {
 	return n, err
 }
 
-// GetAtlassianHostParameters returns the username, password, and hostname required
+// getAtlassianHostParameters returns the username, password, and hostname required
 // to send API requests to Atlassian cloud services.
-func GetAtlassianHostParameters(c *cli.Context) (string, string, string, error) {
+func getAtlassianHostParameters(c *cli.Context) (string, string, string, error) {
 	host := fmt.Sprintf("https://%s.atlassian.net", c.GlobalString("domain"))
 	_, err := http.Get(host)
 	if err != nil {
@@ -58,13 +56,14 @@ func GetAtlassianHostParameters(c *cli.Context) (string, string, string, error) 
 	return c.GlobalString("username"), c.GlobalString("password"), host, nil
 }
 
-func DoRequest(c *cli.Context, requestType string, path string, headers map[string]string, body []byte) ([]byte, error) {
+// DoRequest function provides common interface for sending API requests to Atlassian cloud.
+func DoRequest(c *cli.Context, requestType string, path string, headers map[string]string, body io.Reader) ([]byte, error) {
 	client := http.Client{}
 
 	// Get username, token, and hostname for request.
-	user, token, host, err := GetAtlassianHostParameters(c)
+	user, token, host, err := getAtlassianHostParameters(c)
 	if err != nil {
-		return []byte, common.CliError(err)
+		return nil, CliError(err)
 	}
 
 	// Create the new request.
@@ -79,14 +78,14 @@ func DoRequest(c *cli.Context, requestType string, path string, headers map[stri
 	// Set basic authentication for request.
 	req.SetBasicAuth(user, token)
 
+	// Do request and read the body into byte-array.
 	resp, _ := client.Do(req)
-
-	body, _ := ioutil.ReadAll(resp.Body)
+	respBody, _ := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return []byte, errors.New(string(body))
+		return nil, errors.New(string(respBody))
 	}
 
-	return body, nil
+	return respBody, nil
 }

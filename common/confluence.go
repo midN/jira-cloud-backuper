@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"time"
+
+	"gopkg.in/urfave/cli.v1"
 )
 
 type confluenceProgressResponse struct {
@@ -16,13 +16,13 @@ type confluenceProgressResponse struct {
 }
 
 // ConfluenceWaitForBackupReadiness check status of a backup
-// and loops until it's ready
-func ConfluenceWaitForBackupReadiness(client http.Client, host string) (string, error) {
+// and loops until it's ready.
+func ConfluenceWaitForBackupReadiness(c *cli.Context) (string, error) {
 	downloadURL, fileName, status, progress := "", "", "", ""
 	var err error
 
 	for fileName == "" {
-		downloadURL, fileName, status, progress, err = confluenceCheckBackupProgress(client, host)
+		downloadURL, fileName, status, progress, err = confluenceCheckBackupProgress(c)
 		if err != nil {
 			return "", err
 		}
@@ -40,21 +40,23 @@ func ConfluenceWaitForBackupReadiness(client http.Client, host string) (string, 
 	return downloadURL, nil
 }
 
-func confluenceCheckBackupProgress(client http.Client, host string) (string, string, string, string, error) {
-	var respJSON = new(confluenceProgressResponse)
-	url := host + "/wiki/rest/obm/1.0/getprogress"
-	resp, _ := client.Get(url)
-	body, _ := ioutil.ReadAll(resp.Body)
-	json.Unmarshal(body, &respJSON)
-	resp.Body.Close()
+func confluenceCheckBackupProgress(c *cli.Context) (string, string, string, string, error) {
+	respJSON := confluenceProgressResponse{}
 
-	if resp.StatusCode != 200 {
+	// Do request and handle any errors.
+	body, err := DoRequest(c, "GET", "/wiki/rest/obm/1.0/getprogress", map[string]string{}, nil)
+	if err != nil {
 		return "", "", "", "", errors.New(string(body))
 	}
-	return confluenceDownloadURL(respJSON.Result, host), respJSON.Result, respJSON.Message, respJSON.Progress, nil
+
+	json.Unmarshal(body, &respJSON)
+
+	// Return the download URL, filename, current message, and percentage complete.
+	return confluenceDownloadURL(c, respJSON.Result), respJSON.Result, respJSON.Message, respJSON.Progress, nil
 }
 
-func confluenceDownloadURL(path string, host string) string {
+func confluenceDownloadURL(c *cli.Context, path string) string {
+	_, _, host, _ := getAtlassianHostParameters(c)
 	url := host + "/wiki/download/" + path
 
 	return url
