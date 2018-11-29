@@ -1,10 +1,9 @@
 package actions
 
 import (
-	"errors"
+	"bytes"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 
 	"github.com/fatih/color"
@@ -26,18 +25,13 @@ func ConfluenceDownload() func(c *cli.Context) error {
 		}
 		defer out.Close()
 
-		client, host, err := common.AuthUser(c)
-		if err != nil {
-			return common.CliError(err)
-		}
-
-		downloadURL, err := common.ConfluenceWaitForBackupReadiness(client, host)
+		downloadURL, err := common.ConfluenceWaitForBackupReadiness(c)
 		if err != nil {
 			return common.CliError(err)
 		}
 
 		fmt.Println("Downloading to", filename)
-		result, err := downloadLatestConfluence(client, downloadURL, out)
+		result, err := downloadLatestConfluence(c, downloadURL, out)
 		if err != nil {
 			return common.CliError(err)
 		}
@@ -47,14 +41,15 @@ func ConfluenceDownload() func(c *cli.Context) error {
 	}
 }
 
-func downloadLatestConfluence(client http.Client, url string, out *os.File) (string, error) {
-	resp, _ := client.Get(url)
-	if resp.StatusCode == 404 {
-		return "", errors.New("File not found at " + url)
+func downloadLatestConfluence(c *cli.Context, path string, out *os.File) (string, error) {
+	body, err := common.DoRequest(c, "GET", path, map[string]string{}, nil)
+	if err != nil {
+		return "", err
 	}
-	defer resp.Body.Close()
 
-	readerpt := &common.PassThru{Reader: resp.Body, Length: resp.ContentLength}
+	// Initialize PassThru reader and copy file contents to disk.
+	contentReader := bytes.NewReader(body)
+	readerpt := &common.PassThru{Reader: contentReader, Length: contentReader.Size()}
 	count, err := io.Copy(out, readerpt)
 	if err != nil {
 		return "", err
