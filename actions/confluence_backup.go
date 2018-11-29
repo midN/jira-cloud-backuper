@@ -28,9 +28,9 @@ func ConfluenceBackup() func(c *cli.Context) error {
 			return common.CliError(err)
 		}
 
-		fmt.Println(color.GreenString(fmt.Sprintln(
-			"Done, please use same app to download file or direct link:",
-			downloadURL)))
+		fmt.Println(color.GreenString(fmt.Sprintf(
+			"Done, please use same app to download file or direct link: https://%s.atlassian.net%s",
+			c.GlobalString("domain"), downloadURL)))
 		return nil
 	}
 }
@@ -42,7 +42,7 @@ func initiateConfluenceBackup(c *cli.Context) error {
 		ExportToCloud: "true",
 	})
 
-	body, err := common.DoRequest(c, "POST", "/wiki/rest/obm/1.0/runbackup", headers, bytes.NewBuffer(jsonBody))
+	_, err := common.DoRequest(c, "POST", "/wiki/rest/obm/1.0/runbackup", headers, bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return common.CliError(err)
 	}

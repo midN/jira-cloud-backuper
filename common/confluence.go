@@ -52,12 +52,11 @@ func confluenceCheckBackupProgress(c *cli.Context) (string, string, string, stri
 	json.Unmarshal(body, &respJSON)
 
 	// Return the download URL, filename, current message, and percentage complete.
-	return confluenceDownloadURL(c, respJSON.Result), respJSON.Result, respJSON.Message, respJSON.Progress, nil
+	return confluenceDownloadURL(respJSON.Result), respJSON.Result, respJSON.Message, respJSON.Progress, nil
 }
 
-func confluenceDownloadURL(c *cli.Context, path string) string {
-	_, _, host, _ := getAtlassianHostParameters(c)
-	url := host + "/wiki/download/" + path
+func confluenceDownloadURL(path string) string {
+	url := "/wiki/download/" + path
 
 	return url
 }
