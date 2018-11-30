@@ -9,10 +9,10 @@ import (
 )
 
 func main() {
-
 	app := cli.NewApp()
 	app.Name = "JIRA Cloud Backuper"
-	app.Usage = "Backup your JIRA Cloud and Confluence"
+	app.Usage = "Backup your JIRA and Confluence Cloud"
+	app.Version = "2.0"
 
 	app.Flags = flags.Flags()
 	app.Commands = commands.Commands()
