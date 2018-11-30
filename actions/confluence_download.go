@@ -1,12 +1,9 @@
 package actions
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"os"
 
-	"github.com/fatih/color"
 	"github.com/midN/jira-cloud-backuper/common"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -31,7 +28,7 @@ func ConfluenceDownload() func(c *cli.Context) error {
 		}
 
 		fmt.Println("Downloading to", filename)
-		result, err := downloadLatestConfluence(c, downloadURL, out)
+		result, err := common.DownloadFile(c, downloadURL, out)
 		if err != nil {
 			return common.CliError(err)
 		}
@@ -39,22 +36,4 @@ func ConfluenceDownload() func(c *cli.Context) error {
 		fmt.Print(result)
 		return nil
 	}
-}
-
-func downloadLatestConfluence(c *cli.Context, path string, out *os.File) (string, error) {
-	body, err := common.DoRequest(c, "GET", path, map[string]string{}, nil)
-	if err != nil {
-		return "", err
-	}
-
-	// Initialize PassThru reader and copy file contents to disk.
-	contentReader := bytes.NewReader(body)
-	readerpt := &common.PassThru{Reader: contentReader, Length: contentReader.Size()}
-	count, err := io.Copy(out, readerpt)
-	if err != nil {
-		return "", err
-	}
-
-	return color.GreenString(fmt.Sprintln(
-		"Download finished, file size:", count, "bytes.", "File:", out.Name())), nil
 }

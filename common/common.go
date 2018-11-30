@@ -1,12 +1,15 @@
 package common
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 
+	"github.com/fatih/color"
 	cli "gopkg.in/urfave/cli.v1"
 )
 
@@ -88,4 +91,23 @@ func DoRequest(c *cli.Context, requestType string, path string, headers map[stri
 	}
 
 	return respBody, nil
+}
+
+// DownloadFile downloads zipped backup from Confluence or JIRA.
+func DownloadFile(c *cli.Context, path string, out *os.File) (string, error) {
+	body, err := DoRequest(c, "GET", path, map[string]string{}, nil)
+	if err != nil {
+		return "", err
+	}
+
+	// Initialize PassThru reader and copy file contents to disk.
+	contentReader := bytes.NewReader(body)
+	readerpt := &PassThru{Reader: contentReader, Length: contentReader.Size()}
+	count, err := io.Copy(out, readerpt)
+	if err != nil {
+		return "", err
+	}
+
+	return color.GreenString(fmt.Sprintln(
+		"Download finished, file size:", count, "bytes.", "File:", out.Name())), nil
 }
