@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/midN/jira-cloud-backuper/actions"
+	"github.com/midN/jira-cloud-backuper/daemon"
 	"github.com/midN/jira-cloud-backuper/flags"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -34,11 +35,24 @@ var (
 		Action:  actions.ConfluenceDownload(),
 	}
 
+	confluenceDaemonCommand = cli.Command{
+		Name:    "confluence",
+		Aliases: []string{"cf"},
+		Usage:   "Backup & download from Confluence Cloud automatically",
+		Action:  daemon.StartDaemon(),
+	}
+
+	jiraDaemonCommand = cli.Command{
+		Name:   "jira",
+		Usage:  "Backup & download of JIRA automatically",
+		Action: daemon.StartDaemon(),
+	}
+
 	// Commands
 	backupCommand = cli.Command{
 		Name:    "backup",
 		Aliases: []string{"bp"},
-		Usage:   "backup ( jira or confluence )",
+		Usage:   "Backup ( jira or confluence )",
 		Subcommands: []cli.Command{
 			jiraBackupCommand,
 			conflueceBackupCommand,
@@ -48,11 +62,21 @@ var (
 	downloadCommand = cli.Command{
 		Name:    "download",
 		Aliases: []string{"dl"},
-		Usage:   "download ( jira or confluence )",
+		Usage:   "Download ( jira or confluence )",
 		Flags:   flags.DlFlags(),
 		Subcommands: []cli.Command{
 			jiraDownloadCommand,
 			confluenceDownloadCommand,
+		},
+	}
+
+	daemonCommand = cli.Command{
+		Name:    "daemon",
+		Aliases: []string{"d"},
+		Usage:   "Run daemon to download backups from jira or confluence",
+		Subcommands: []cli.Command{
+			confluenceDaemonCommand,
+			jiraDaemonCommand,
 		},
 	}
 )
@@ -62,5 +86,6 @@ func Commands() []cli.Command {
 	return []cli.Command{
 		backupCommand,
 		downloadCommand,
+		daemonCommand,
 	}
 }

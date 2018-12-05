@@ -3,10 +3,7 @@ package actions
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 
 	"github.com/fatih/color"
 	"github.com/midN/jira-cloud-backuper/common"
@@ -21,17 +18,13 @@ type backupResponse struct {
 // which calls necessary JIRA APIs to initalize a backup action
 func JiraBackup() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
-		client, host, err := common.AuthUser(c)
+		backupID, err := initiateJiraBackup(c)
 		if err != nil {
 			return common.CliError(err)
 		}
+		fmt.Println("Backup initiated")
 
-		backupID, err := initiateJiraBackup(client, host)
-		if err != nil {
-			return common.CliError(err)
-		}
-
-		downloadURL, err := common.JiraWaitForBackupReadyness(client, backupID, host)
+		downloadURL, err := common.JiraWaitForBackupReadyness(c, backupID)
 		if err != nil {
 			return common.CliError(err)
 		}
@@ -43,24 +36,20 @@ func JiraBackup() func(c *cli.Context) error {
 	}
 }
 
-func initiateJiraBackup(client http.Client, host string) (string, error) {
-	var respJSON = new(backupResponse)
+func initiateJiraBackup(c *cli.Context) (string, error) {
+	headers := map[string]string{"Content-Type": "application/json"}
 	jsonBody, _ := json.Marshal(common.BackupBody{
-		"true",
-		"true",
+		CbAttachments: "true",
+		ExportToCloud: "true",
 	})
 
-	resp, _ := client.Post(
-		host+"/rest/backup/1/export/runbackup",
-		"application/json",
-		bytes.NewBuffer(jsonBody),
-	)
-	body, _ := ioutil.ReadAll(resp.Body)
-	json.Unmarshal(body, &respJSON)
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return "", errors.New(string(body))
+	body, err := common.DoRequest(c, "POST", "/rest/backup/1/export/runbackup", headers, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return "", err
 	}
+
+	respJSON := backupResponse{}
+	json.Unmarshal(body, &respJSON)
+
 	return respJSON.TaskID, nil
 }

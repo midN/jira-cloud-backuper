@@ -1,13 +1,10 @@
 package actions
 
 import (
-	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
+	"time"
 
-	"github.com/fatih/color"
 	"github.com/midN/jira-cloud-backuper/common"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -18,7 +15,8 @@ func ConfluenceDownload() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
 		filename := c.GlobalString("output")
 		if filename == "" {
-			filename = "confluence.zip"
+			timeString := time.Now().Format("2006-01-02")
+			filename = fmt.Sprintf("%s-confluence.zip", timeString)
 		}
 		out, err := os.Create(filename)
 		if err != nil {
@@ -26,18 +24,13 @@ func ConfluenceDownload() func(c *cli.Context) error {
 		}
 		defer out.Close()
 
-		client, host, err := common.AuthUser(c)
-		if err != nil {
-			return common.CliError(err)
-		}
-
-		downloadURL, err := common.ConfluenceWaitForBackupReadyness(client, host)
+		downloadURL, err := common.ConfluenceWaitForBackupReadiness(c)
 		if err != nil {
 			return common.CliError(err)
 		}
 
 		fmt.Println("Downloading to", filename)
-		result, err := downloadLatestConfluence(client, downloadURL, out)
+		result, err := common.DownloadFile(c, downloadURL, out)
 		if err != nil {
 			return common.CliError(err)
 		}
@@ -45,21 +38,4 @@ func ConfluenceDownload() func(c *cli.Context) error {
 		fmt.Print(result)
 		return nil
 	}
-}
-
-func downloadLatestConfluence(client http.Client, url string, out *os.File) (string, error) {
-	resp, _ := client.Get(url)
-	if resp.StatusCode == 404 {
-		return "", errors.New("File not found at " + url)
-	}
-	defer resp.Body.Close()
-
-	readerpt := &common.PassThru{Reader: resp.Body, Length: resp.ContentLength}
-	count, err := io.Copy(out, readerpt)
-	if err != nil {
-		return "", err
-	}
-
-	return color.GreenString(fmt.Sprintln(
-		"Download finished, file size:", count, "bytes.", "File:", out.Name())), nil
 }
