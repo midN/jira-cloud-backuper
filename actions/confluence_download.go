@@ -3,6 +3,7 @@ package actions
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/midN/jira-cloud-backuper/common"
 	"gopkg.in/urfave/cli.v1"
@@ -14,7 +15,8 @@ func ConfluenceDownload() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
 		filename := c.GlobalString("output")
 		if filename == "" {
-			filename = "confluence.zip"
+			timeString := time.Now().Format("2006-01-02")
+			filename = fmt.Sprintf("%s-confluence.zip", timeString)
 		}
 		out, err := os.Create(filename)
 		if err != nil {
