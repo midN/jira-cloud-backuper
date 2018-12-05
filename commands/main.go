@@ -52,7 +52,7 @@ var (
 	backupCommand = cli.Command{
 		Name:    "backup",
 		Aliases: []string{"bp"},
-		Usage:   "backup ( jira or confluence )",
+		Usage:   "Backup ( jira or confluence )",
 		Subcommands: []cli.Command{
 			jiraBackupCommand,
 			conflueceBackupCommand,
@@ -62,7 +62,7 @@ var (
 	downloadCommand = cli.Command{
 		Name:    "download",
 		Aliases: []string{"dl"},
-		Usage:   "download ( jira or confluence )",
+		Usage:   "Download ( jira or confluence )",
 		Flags:   flags.DlFlags(),
 		Subcommands: []cli.Command{
 			jiraDownloadCommand,
